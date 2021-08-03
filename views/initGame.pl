@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 use Tk; 
 use strict;
+require "./back.pl";
+
 
 # Criando janela principal
 my $thisWindow = MainWindow->new;
@@ -12,32 +14,33 @@ my $topBar;
 my $font = $thisWindow->fontCreate(-size => 13, -weight => 'bold');
 my $font2 = $thisWindow->fontCreate(-size => 17, -weight => 'bold');
 
-my @btns_barcos;
+my @btnsShips;
 
 #Guarda o navio selecionado
-my $selectNavio;
-my $selectOrientacao;
+my $selectShip;
+my $selectAxis;
 
 #Botão Navio
-my @btn_navios;
-my @btn_orientacao;
+my @btn_ships;
+my @btn_Axis;
 
 #Label Navio
-my @label_navios = ('Porta Aviao', 'Guerra', 'Encouracado', 'Submarino');
-my @label_orientacao = ('Horizontal', 'Vertical');
+my @label_ships = ('Porta Aviao', 'Guerra', 'Encouracado', 'Submarino');
+my @label_Axis = ('Vertical', 'Horizontal');
 
 #Variaveis de controle do jogo
 my $acc_water = 0;
 my $acc_ship = 0;
-my $qnt_ship = 0;
+my $qnt_houses = 0;
 my $turn = 1;
 my $acc_enemy = 0;
+my $qnt_houses_enemy = 0;
 
 #Textos do jogos
 my $turn_label; 
 my $pont_label; 
 my $acc_label;
-my $qnt_ship_enemy = 0;
+
 
 #Fontes do jogo
 my $font = $thisWindow->fontCreate(-size => 13, -weight => 'bold');
@@ -47,14 +50,15 @@ my $font2 = $thisWindow->fontCreate(-size => 17, -weight => 'bold');
 my $turn_label; 
 my $pont_label; 
 my $acc_label;
-my $qnt_ship_enemy = 0;
 
 #Array de btns
-my @btns_jogador;
-my @btns_computador;
-my @btns_barcos;
+my @btnsPlayer;
+my @btnsComputer;
+my @btnsShips;
 
-my @matriz_ENEMY = (
+
+
+my @matrixEnemy = (
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -66,7 +70,7 @@ my @matriz_ENEMY = (
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
-my @matriz_MY = (
+my @matrixMy = (
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -77,6 +81,20 @@ my @matriz_MY = (
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
+
+my @matrixPlays = (
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+
 
 sub topBar{
     $topBar = $thisWindow->Frame(-relief => 'groove', -borderwidth => 3, -background => 'gray')->pack(-side => 'top', -fill =>'x');
@@ -84,7 +102,7 @@ sub topBar{
     my $exit = $topBar->Button(-text => "Sair", -command => [\&exitGame], -background => 'white', -foreground =>'black', -width => 3, -height => 1.5, -font => $font)->pack(-side => 'right');
 }
 
-sub topBarJogo{
+sub topBarGame{
     $topBar = $thisWindow->Frame(-relief => 'groove', -borderwidth => 3, -background => 'gray')->pack(-side => 'top', -fill =>'x');
     my $new = $topBar->Button(-text => "Criar jogo", -command => [\&createGame ], -background => 'white', -foreground =>'black', -width => 0, -height => 1.5, -font => $font)->pack(-side => 'left');
     my $exit = $topBar->Button(-text => "Sair", -command => [\&exitGame], -background => 'white', -foreground =>'black', -width => 3, -height => 1.5, -font => $font)->pack(-side => 'right');
@@ -118,7 +136,7 @@ sub start {
     $container = $thisWindow->Frame(-background => "white");
     $container->pack(-side => 'top', -fill => 'x');
     
-    plotMatrix(@matriz_MY);
+    plotMatrix(@matrixMy);
 
     my $subcontainer = $container->Frame(-background => "white");
     $subcontainer->pack(-side => 'top', -fill => 'x');
@@ -127,10 +145,10 @@ sub start {
     
     my $midle   = $subcontainer->Frame(-background => "white")->pack(-side => 'left', -pady => 1, -padx => 125);
     for(my $i = 0; $i < 4; $i++){
-        my $aux = @label_navios[$i];
-        $btn_navios[$i] = $midle->Button(-text => "$aux", -width => 10, -height => 3, -background => "white");
-        $btn_navios[$i]->configure(-command => [\&selectNavio,  $i+1]);
-        $btn_navios[$i]->pack(-side => 'left', -padx => 10);
+        my $aux = @label_ships[$i];
+        $btn_ships[$i] = $midle->Button(-text => "$aux", -width => 10, -height => 3, -background => "white");
+        $btn_ships[$i]->configure(-command => [\&selectShip,  $i+1]);
+        $btn_ships[$i]->pack(-side => 'left', -padx => 10);
     }
  
     my $subcontainer1 = $container->Frame(-background => "white");
@@ -142,63 +160,64 @@ sub start {
     my $midle1   = $subcontainer1->Frame(-background => "white")->pack(-side => 'left', -pady => 1, -padx => 240);
     
     for(my $i = 0; $i < 2; $i++){
-        my $aux = @label_orientacao[$i];
-        $btn_orientacao[$i] = $midle1->Button(-text => "$aux", -width => 10, -height => 3, -background => "white");
-        $btn_orientacao[$i]->configure(-command => [\&selectOrientacao,  $i]);
-        $btn_orientacao[$i]->pack(-side => 'left', -pady => 11, -padx => 10);
+        my $aux = @label_Axis[$i];
+        $btn_Axis[$i] = $midle1->Button(-text => "$aux", -width => 10, -height => 3, -background => "white");
+        $btn_Axis[$i]->configure(-command => [\&selectAxis,  $i]);
+        $btn_Axis[$i]->pack(-side => 'left', -pady => 11, -padx => 10);
     }
     
     MainLoop();
 }
 
-sub selectNavio {
-    $selectNavio = @_[0];
+sub selectShip {
+    $selectShip = @_[0];
     for(my $i = 0; $i < 4; $i++){
-        $btn_navios[$i]->configure(-background => "white");
+        $btn_ships[$i]->configure(-background => "white");
     }
-    $btn_navios[$selectNavio - 1]->configure(-background => "gray");
+    $btn_ships[$selectShip - 1]->configure(-background => "gray");
 }
 
-sub selectOrientacao {
-    $selectOrientacao = @_[0];
+sub selectAxis {
+    $selectAxis = @_[0];
         for(my $i = 0; $i < 2; $i++){
-        $btn_orientacao[$i]->configure(-background => "white");
+        $btn_Axis[$i]->configure(-background => "white");
     }
-    $btn_orientacao[$selectOrientacao]->configure(-background => "gray");
+    $btn_Axis[$selectAxis]->configure(-background => "gray");
 }
 
-sub plotMatrixJogo  {
+sub plotMatrixGame  {
     #Receber Matriz e parametros
-    my @final = @{$_[0]};
+    my @end = @{$_[0]};
     my $param = $_[1];
     
     #plotando matriz
-    for(my $i = 0; $i <= $#final; $i++){
+    for(my $i = 0; $i <= $#end; $i++){
 
         #Criar Frame
         my $left = $container->Frame(-background => "white");
         $left->pack(-side => 'left', -pady => 1, -padx => 1);
-        for(my $j = 0; $j <= $#final ; $j++){             
+        for(my $j = 0; $j <= $#end ; $j++){             
             if($param ne 'blocked'){
-                $btns_jogador[$i][$j] = $left->Button(-text => "0", -width => 3, -height => 3, -background => "white");
-                $btns_jogador[$i][$j]->configure(-command => [\&clickJogar, $j, $i, $btns_jogador[$i][$j]]);
-                $btns_jogador[$i][$j]->pack();  
-                if($final[$i][$j] != 0){
-                    $qnt_ship = $qnt_ship + 1;
+                $btnsPlayer[$i][$j] = $left->Button(-text => "0", -width => 3, -height => 3, -background => "white");
+                $btnsPlayer[$i][$j]->configure(-command => [\&clickJogar, $j, $i, $btnsPlayer[$i][$j]]);
+                $btnsPlayer[$i][$j]->pack();  
+                if($end[$i][$j] != 0){
+                    $qnt_houses = $qnt_houses + 1;
                 }
             }else{
-                $btns_computador[$i][$j] = $left->Button(-text => "0", -width => 3, -height => 3, -background => "white");
-                $btns_computador[$i][$j]->pack(); 
-                if($final[$i][$j] != 0){
-                    $qnt_ship_enemy = $qnt_ship_enemy + 1;
+                $btnsComputer[$i][$j] = $left->Button(-text => "0", -width => 3, -height => 3, -background => "white");
+                $btnsComputer[$i][$j]->pack(); 
+                if($end[$i][$j] != 0){
+                    $qnt_houses_enemy = $qnt_houses_enemy + 1;
                 }
-                $btns_computador[$i][$j]->configure(-state => 'disabled');   
+                $btnsComputer[$i][$j]->configure(-state => 'disabled');   
             }
         }   
     }   
 }
 
 sub enemyTurn {
+
     $turn = $turn + 1;
     $turn_label->configure(-text => "Turno $turn: turno do inimigo!", -foreground => 'red'); 
 
@@ -206,14 +225,15 @@ sub enemyTurn {
     
     my $i   =   0; 
     my $j   =   0; 
-
-    #funcão que retorna valor da posicao da matriz (i, j) (COMUNICACAO COM BACK)
-    my $valor = 0;
     
-
-    if($valor == 0){
+    ($i, $j) = playsComputer();
+    #funcão que retorna value da posicao da matriz (i, j) (COMUNICACAO COM BACK) PRONTOOOOOOOOOOOo
+    my $value = enemyPlay($i, $j);
+    print($i, $j);
+    
+    if($value == 0){
         #atualizar matriz inimiga
-        $btns_computador[$i][$j]->configure(-text=>"9");
+        $btnsComputer[$i][$j]->configure(-text=>"9");
         #turno do jogador
         $turn = $turn + 1;
         $turn_label->configure(-text => "Turno $turn: Seu turno!", -foreground => 'green');  
@@ -222,8 +242,8 @@ sub enemyTurn {
     else{
         $acc_enemy = $acc_enemy + 1; 
         #atualizar matriz inimiga
-        $btns_computador[$i][$j]->configure(-text=>"$valor");    
-        if($acc_enemy == $qnt_ship_enemy){
+        $btnsComputer[$i][$j]->configure(-text=>"8");    
+        if($acc_enemy == $qnt_houses_enemy){
             lost();
         }else{
            enemyTurn();   
@@ -232,11 +252,11 @@ sub enemyTurn {
 }
 
 sub won {
-my $response = $thisWindow->messageBox(-icon => 'sucess', -message => 'Voce Venceu!', -title => 'Vencedor', -type => 'AbortRetryIgnore', -default => 'Retry');
+    my $response = $thisWindow->messageBox(-message => 'Voce Venceu!', -title => 'Vencedor', -type => 'AbortRetryIgnore', -default => 'Retry');
 }
 
 sub lost {
-my $response = $thisWindow->messageBox(-icon => 'error', -message => 'Voce perdeu :(', -title => 'Perdedor', -type => 'AbortRetryIgnore', -default => 'Retry');
+    my $response = $thisWindow->messageBox(-icon => 'error', -message => 'Voce perdeu :(', -title => 'Perdedor', -type => 'AbortRetryIgnore', -default => 'Retry');
 }
 
 sub clickJogar {
@@ -244,25 +264,35 @@ sub clickJogar {
     disable();
     my @clicked=@_;
     
-    #funcão que retorna valor da posicao da matriz (COMUNICACAO COM BACK)
-    #Retorno {
+    #funcão que retorna value da posicao da matriz (COMUNICACAO COM BACK) PRONTOOOOOOO
+    #return {
     #  tipo de barco no ponto(i, j)
     #}
-    my $valor = 0;
     
+    my $value = plays($clicked[1], $clicked[0]);
     
-    if($valor == 0){
+
+    my $i = $clicked[1];
+    my $j = $clicked[0];
+
+    if($value == 0){
         $acc_water = $acc_water + 1;
         #atualizar matriz
         $clicked[2]->configure(-text=>"9");
+
+        $matrixPlays[$i][$j] = 1;
+
+        $acc_label->configure(-text => "Acertos agua: $acc_water");
         enemyTurn();
     }
     else{
         $acc_ship = $acc_ship + 1; 
         #atualizar matriz
-        $clicked[2]->configure(-text=>"$valor");
-        
-        if($acc_ship == $qnt_ship){
+        $clicked[2]->configure(-text=>"8");
+        $matrixPlays[$i][$j] = 1;
+
+        $pont_label->configure(-text => "Sua pontuacao eh: $acc_ship/$qnt_houses");
+        if($acc_ship == $qnt_houses){
             won();
         }else{
             $turn = $turn + 1;
@@ -282,7 +312,7 @@ sub startGame{
     $thisWindow->configure(-background => "white");
 
     #startar barra de menu
-    topBarJogo();
+    topBarGame();
     
     #start pontuacoes
     $container = $thisWindow->Frame(-background => "white");
@@ -292,8 +322,8 @@ sub startGame{
     $points->pack(-side => 'top', -fill => 'x');
     
     my $left1       = $points->Frame(-background => 'white')->pack(-side => 'left', -padx => 0);
-    $pont_label     = $left1->Label(-text => "Sua pontuacao eh: $acc_ship/$qnt_ship", -background => 'white', -width => 25, -height => 1.5, -font => $font, -anchor => 'w')->pack();
-    $acc_label      = $left1->Label(-text => "Acertos agua: $acc_water | navios: $acc_ship", -background => 'white', -width => 25, -height => 1.5, -font => $font, -anchor => 'w')->pack();
+    $pont_label     = $left1->Label(-text => "Sua pontuacao eh: $acc_ship/$qnt_houses", -background => 'white', -width => 25, -height => 1.5, -font => $font, -anchor => 'w')->pack();
+    $acc_label      = $left1->Label(-text => "Acertos agua: $acc_water", -background => 'white', -width => 25, -height => 1.5, -font => $font, -anchor => 'w')->pack();
     $turn_label     = $left1->Label(-text => "Turno $turn: Seu turno!", -background => 'white', -width => 25, -height => 1.5, -font => $font, -foreground => 'green', -anchor => 'w')->pack();
     
     #startar matrix
@@ -302,79 +332,89 @@ sub startGame{
     my $label_3 = $name->Label(-text => "Campo Inimigo", -background => 'white', -width => 12, -height => 1.5, -font => $font2)->pack(-side => 'left', -padx => 167);
     my $label_4 = $name->Label(-text => "Seu Campo", -background => 'white', -width => 12, -height => 1.5, -font => $font2)->pack(-side => 'right', -padx => 165);
 
-    plotMatrixJogo(\@matriz_ENEMY, 'unblocked');
+    @matrixEnemy = addShipsComputer();     
+    
+
+    for(my $i = 0 ; $i< 10; $i++){
+    for(my $j = 0; $j< 10; $j++){
+        print "$matrixEnemy[$i][$j]";
+    }
+    print "\n";
+    }
+
+    plotMatrixGame(\@matrixEnemy, 'unblocked');
+    $pont_label->configure(-text => "Sua pontuacao eh: $acc_ship/$qnt_houses");
     my $midle   = $container->Frame(-background => "white")->pack(-side => 'left', -pady => 1, -padx => 20);
-    plotMatrixJogo(\@matriz_MY, 'blocked');
+
+    
+
+    plotMatrixGame(\@matrixMy, 'blocked');
     
     MainLoop();
 }
 
 sub plotMatrix  {
     #Receber Matriz e parametros
-    my @final = @_;
+    my @end = @_;
     
     #plotando matriz
-    for(my $i = 0; $i <= $#final; $i++){
+    for(my $i = 0; $i <= $#end; $i++){
 
         #Criar Frame
         my $left = $container->Frame(-background => "white");
         $left->pack(-side => 'left', -pady => 1, -padx => 1);
-        for(my $j = 0; $j <= $#final ; $j++){             
-            $btns_barcos[$i][$j] = $left->Button(-text => "0", -width => 3, -height => 3, -background => "white");
-            $btns_barcos[$i][$j]->configure(-command => [\&click, $j, $i, $btns_barcos[$i][$j]]);
-            $btns_barcos[$i][$j]->pack();  
+        for(my $j = 0; $j <= $#end ; $j++){             
+            $btnsShips[$i][$j] = $left->Button(-text => "0", -width => 3, -height => 3, -background => "white");
+            $btnsShips[$i][$j]->configure(-command => [\&click, $j, $i, $btnsShips[$i][$j]]);
+            $btnsShips[$i][$j]->pack();  
         }   
     }   
 }
 
 sub click {
     my @clicked=@_;
-    #funcao que retorna a minha matriz validada (COMUNICACAO COM BACK)
-    #Retorno {
+    #funcao que retorna a minha matriz validada (COMUNICACAO COM BACK) PRONTOOOOOOOOOOOOOO
+    #return {
     #  [True e matriz] or [False e Mensagem]
     #}
-    #print("$selectOrientacao, $selectNavio, $clicked[0], $clicked[1]");
-    my $retorno;
+    my $return;
     my @array; 
 
-    ($retorno, @array) = &foo();
+    ($return, @array) = &addShips($selectShip, $clicked[1], $clicked[0], $selectAxis, 0);
 
-    if($retorno){
+    if($return == 0){
+        @matrixMy = @array;
         for(my $i = 0; $i < 10; $i++){
             for(my $j = 0; $j < 10; $j++){
-                $btns_barcos[$i][$j]->configure(-text=>"$array[$i][$j]");
+                $btnsShips[$i][$j]->configure(-text=>"$array[$i][$j]");
+
+
+                if($array[$i][$j] != 0){
+                    $btnsShips[$i][$j]->configure(-state => 'disabled');
+                }
             }
         }
     }else{
         my $response = $thisWindow->messageBox(-icon => 'error', -message => 'Nao eh possivel adicionar navio', -title => 'Error', -type => 'AbortRetryIgnore', -default => 'Retry');
     } 
 }
-sub foo {
-  return (0,(
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]));
-}
 
 sub disable {
     for(my $i = 0; $i < 10; $i++){
         for(my $j = 0; $j < 10 ; $j++){             
-            $btns_jogador[$i][$j]->configure(-state => 'disabled');  
+            $btnsPlayer[$i][$j]->configure(-state => 'disabled');  
         }   
     }
 }
 
 sub able {
     for(my $i = 0; $i < 10; $i++){
-        for(my $j = 0; $j < 10 ; $j++){             
-            $btns_jogador[$i][$j]->configure(-state => 'normal');  
+        for(my $j = 0; $j < 10 ; $j++){                  
+            if($matrixPlays[$i][$j] == 1){
+                $btnsPlayer[$i][$j]->configure(-state => 'disabled');  
+            }else{
+                $btnsPlayer[$i][$j]->configure(-state => 'normal'); 
+            }    
         }   
     }
 }
